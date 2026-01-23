@@ -1,39 +1,15 @@
-# Sample coding questions 01 week 01
-# Name: Yigit Alkoc
-# Student id: 101558073
+# Solution to Week 02 questions
+import random
 
-# question 1 defining variables
-# creating array with 1 4 7 9
-my_array = [1, 4, 7, 9]
-print(f"Array: {my_array}")
+choices = ["Rock", "Paper", "Scissors"]
 
+playerChoice = input("Enter your choice (1-Rock, 2-Paper, 3-Scissors): ")
+playerChoice = int(playerChoice)
 
-# question 2 order of operations
-# defining vars a b c d
-a = 1
-b = 2
-c = 3
-d = 4
+if playerChoice < 1 or playerChoice > 3:
+    print("Error: The Input should be an integer between 1 and 3!")
+    # Determine the winner logic using if/elif/else
+computerChoice = random.randint(1,3)
 
-# original equation e = a - b ** c // d + a % c
-# fully bracketed version
-# order is exponent then floor div then mod then sub/add
-e = (a - ((b ** c) // d)) + (a % c)
-print(f"Result of fully bracketed expression: {e}")
-
-
-# question 3 formatting
-# temperature variable is 32.6
-temperature = 32.6
-
-# using format to show 3 decimal places
-print("The temperature today is: {:.3f} degrees Celsius".format(temperature))
-
-
-# question 4 common functions
-# asking user for age input
-# need to type 22 when running this
-userAge = input("Please enter your age: ")
-
-# printing the sentence with the age
-print(f"Now showing the shop items filtered by age: {userAge}")
+if playerChoice == computerChoice:
+print("Tie")
