@@ -1,32 +1,49 @@
-# ============================================================
-#  WEEK 11 LAB — Q1: SERVER LOG ANALYZER
-#  COMP2152 — Yigit Alkoc
-# ============================================================
+import urllib.request
+import json
 
-class LogAnalyzer:
-    def __init__(self):
-        self.logs = []
+def make_request(url):
+    response = urllib.request.urlopen(url)
+    body = response.read().decode()
+    status = response.status
+    headers = dict(response.headers)
 
-    def add_log(self, status_code, endpoint):
-        self.logs.append({"code": status_code, "path": endpoint})
+    return {
+        "status": status,
+        "headers": headers,
+        "body": body
+    }
 
-    def count_errors(self):
-        return sum(1 for log in self.logs if log["code"] >= 400)
+def parse_json(body):
+    try:
+        return json.loads(body)
+    except:
+        return {}
 
-    def get_endpoints(self):
-        return list(set(log["path"] for log in self.logs))
+def check_api_info(response):
+    headers = response["headers"]
 
-    def print_summary(self):
-        print(f"Total Logs: {len(self.logs)}")
-        print(f"Error Count: {self.count_errors()}")
-        print("Unique Endpoints:", ", ".join(self.get_endpoints()))
+    print("\n--- Security Checks ---")
 
-if __name__ == "__main__":
-    analyzer = LogAnalyzer()
-    analyzer.add_log(200, "/home")
-    analyzer.add_log(404, "/admin")
-    analyzer.add_log(500, "/api/data")
-    analyzer.add_log(200, "/home")
-    
-    print("--- Log Summary ---")
-    analyzer.print_summary()
+    # Server info leak
+    if "Server" in headers:
+        print(f"[!] Server exposed: {headers['Server']}")
+
+    # Technology leak
+    if "X-Powered-By" in headers:
+        print(f"[!] Technology exposed: {headers['X-Powered-By']}")
+
+    # CORS issue
+    if headers.get("Access-Control-Allow-Origin") == "*":
+        print("[!] CORS is wide open (*)")
+
+# Test
+url = "http://example.com"
+res = make_request(url)
+
+print("Status:", res["status"])
+print("Headers:", res["headers"])
+
+data = parse_json(res["body"])
+print("JSON:", data)
+
+check_api_info(res)
