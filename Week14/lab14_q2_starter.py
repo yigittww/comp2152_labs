@@ -1,45 +1,35 @@
-# ============================================================
-#  WEEK 11 LAB — Q2: PASSWORD STRENGTH CHECKER
-#  COMP2152 — Yigit Alkoc
-# ============================================================
+import urllib.request
 
-class PasswordChecker:
-    def __init__(self):
-        self.common_passwords = {"admin", "password", "123456", "root", "guest", "letmein", "welcome"}
-        self.history = []
+required_headers = [
+    "X-Frame-Options",
+    "X-Content-Type-Options",
+    "Content-Security-Policy",
+    "Strict-Transport-Security"
+]
 
-    def check_common(self, password):
-        return password.lower() in self.common_passwords
+def check_headers(url):
+    response = urllib.request.urlopen(url)
+    headers = dict(response.headers)
 
-    def check_strength(self, password):
-        return {
-            "length": len(password) >= 8,
-            "digit": any(c.isdigit() for c in password),
-            "special": any(c in "!@#$%^&*" for c in password)
-        }
+    results = {}
 
-    def evaluate(self, password):
-        if self.check_common(password):
-            res = "WEAK (common password)"
+    for header in required_headers:
+        results[header] = header in headers
+
+    return results
+
+def generate_report(url, results):
+    print(f"\nChecking: {url}")
+
+    for header, present in results.items():
+        if present:
+            print(f"✓ {header}")
         else:
-            stats = self.check_strength(password)
-            score = sum(stats.values())
-            levels = {0: "WEAK", 1: "WEAK", 2: "MEDIUM", 3: "STRONG"}
-            res = levels.get(score, "WEAK")
-                
-        self.history.append((password, res))
-        return res
+            print(f"✗ {header} (Missing - security risk)")
 
-if __name__ == "__main__":
-    print("=" * 60)
-    checker = PasswordChecker()
-    test_passwords = ["admin", "hello", "hello123", "MyP@ss99", "p@ssw0rd!", "root"]
+# Test
+urls = ["http://example.com"]
 
-    print("\n--- Checking Passwords ---")
-    for pw in test_passwords:
-        print(f"  {pw:<15} → {checker.evaluate(pw)}")
-
-    print("\n--- Check History ---")
-    for pw, res in checker.history:
-        print(f"  {pw:<15} : {res}")
-    print("\n" + "=" * 60)
+for url in urls:
+    results = check_headers(url)
+    generate_report(url, results)
