@@ -1,93 +1,45 @@
 # ============================================================
-#  WEEK 10 LAB — Q2: LOGIN ATTEMPT TRACKER
-#  COMP2152 — Yigit Alkoc (101558073)
+#  WEEK 11 LAB — Q2: PASSWORD STRENGTH CHECKER
+#  COMP2152 — Yigit Alkoc
 # ============================================================
 
-import sqlite3
-import datetime
+class PasswordChecker:
+    def __init__(self):
+        self.common_passwords = {"admin", "password", "123456", "root", "guest", "letmein", "welcome"}
+        self.history = []
 
-DB_NAME = "login_tracker.db"
+    def check_common(self, password):
+        return password.lower() in self.common_passwords
 
-def setup_database():
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute("DROP TABLE IF EXISTS login_attempts")
-    cursor.execute("""CREATE TABLE login_attempts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        success INTEGER,
-        attempt_date TEXT
-    )""")
-    conn.commit()
-    conn.close()
+    def check_strength(self, password):
+        return {
+            "length": len(password) >= 8,
+            "digit": any(c.isdigit() for c in password),
+            "special": any(c in "!@#$%^&*" for c in password)
+        }
 
-def display_attempts(attempts):
-    if not attempts:
-        print("  (no results)")
-        return
-    for row in attempts:
-        status = "success" if row[2] else "FAILED"
-        print(f"  {row[1]:<8} | {status:<7} | {row[3]}")
-
-def record_attempt(username, success):
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO login_attempts (username, success, attempt_date) VALUES (?, ?, ?)",
-                   (username, success, str(datetime.datetime.now())))
-    conn.commit()
-    conn.close()
-
-def get_failed_attempts(username):
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM login_attempts WHERE username = ? AND success = 0", (username,))
-    rows = cursor.fetchall()
-    conn.close()
-    return rows
-
-def count_failures_per_user():
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute("SELECT username, COUNT(*) FROM login_attempts WHERE success = 0 GROUP BY username")
-    rows = cursor.fetchall()
-    conn.close()
-    return rows
-
-def delete_old_attempts(username):
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM login_attempts WHERE username = ?", (username,))
-    count = cursor.rowcount
-    conn.commit()
-    conn.close()
-    return count
+    def evaluate(self, password):
+        if self.check_common(password):
+            res = "WEAK (common password)"
+        else:
+            stats = self.check_strength(password)
+            score = sum(stats.values())
+            levels = {0: "WEAK", 1: "WEAK", 2: "MEDIUM", 3: "STRONG"}
+            res = levels.get(score, "WEAK")
+                
+        self.history.append((password, res))
+        return res
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("  LOGIN ATTEMPT TRACKER")
-    print("=" * 60)
-    setup_database()
+    checker = PasswordChecker()
+    test_passwords = ["admin", "hello", "hello123", "MyP@ss99", "p@ssw0rd!", "root"]
 
-    print("\n--- Recording Login Attempts ---")
-    attempts = [("admin", True), ("admin", False), ("admin", False), ("admin", False),
-                ("guest", True), ("guest", False), ("root", False), ("root", False),
-                ("root", False), ("root", False)]
-    for user, success in attempts:
-        record_attempt(user, success)
-        status = "success" if success else "FAILED"
-        print(f"  Recorded: {user} ({status})")
+    print("\n--- Checking Passwords ---")
+    for pw in test_passwords:
+        print(f"  {pw:<15} → {checker.evaluate(pw)}")
 
-    print("\n--- Failed Attempts for 'admin' ---")
-    display_attempts(get_failed_attempts("admin"))
-
-    print("\n--- Failure Counts ---")
-    counts = count_failures_per_user()
-    for user, count in counts:
-        msg = f"  {user:<10}  {count} failed attempts"
-        if count >= 4: msg += f"  \u26a0 {user} has {count} failed attempts \u2014 brute-force!"
-        print(msg)
-
-    print("\n--- Reset 'root' account ---")
-    deleted = delete_old_attempts("root")
-    print(f"  Deleted {deleted} records for root")
+    print("\n--- Check History ---")
+    for pw, res in checker.history:
+        print(f"  {pw:<15} : {res}")
     print("\n" + "=" * 60)
